@@ -72,6 +72,11 @@
 
 align-items: center;
 
+
+
+align-items: center;
+justify-content: center;
+
 }
     .modal{width:min(780px,100%);background:#fff;border-radius:18px;border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden
 
@@ -79,14 +84,35 @@ display:flex;
 flex-direction:column;
 max-height: calc(100dvh - 28px);
 
+
+
+display:flex;
+flex-direction:column;
+width:min(780px, 100%);
+max-height: calc(100vh - 24px);
+height: auto;
+overflow:hidden;
+
 }
-    .modalHead{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);background:#fff}
+    .modalHead{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);background:#fff
+
+flex: 0 0 auto;
+
+}
     .modalHead .h{font-weight:900}
     .modalBody{padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px
 
 overflow:auto;
 -webkit-overflow-scrolling: touch;
 padding-bottom: calc(14px + env(safe-area-inset-bottom));
+
+
+
+flex: 1 1 auto;
+min-height: 0;
+overflow: auto;
+-webkit-overflow-scrolling: touch;
+padding-bottom: 18px;
 
 }
     .modalBody .full{grid-column:1/-1}
@@ -101,6 +127,14 @@ z-index: 2;
 background: #fff;
 padding-bottom: calc(12px + env(safe-area-inset-bottom));
 
+
+
+flex: 0 0 auto;
+position: relative; /* not sticky; always visible */
+border-top: 1px solid var(--line);
+background: #fff;
+padding-bottom: calc(12px + env(safe-area-inset-bottom));
+
 }
     .danger{background:#ef4444;border-color:#ef4444}
     .muted{color:var(--muted)}
@@ -109,7 +143,12 @@ padding-bottom: calc(12px + env(safe-area-inset-bottom));
 
     @media (max-width:520px){
       .wrap{padding:10px
-      .modal{width:100%; max-height: calc(100dvh - 12px); border-radius:16px;}
+      .modal{width:100%; max-height: calc(100dvh - 12px); border-radius:16px;
+      .modalBackdrop{padding:10px; align-items:stretch;}
+
+      .modalBody{padding-bottom: 24px;}
+
+    }
 
       .modalBackdrop{padding:10px; align-items:stretch;}
 
@@ -136,7 +175,7 @@ padding-bottom: calc(12px + env(safe-area-inset-bottom));
           <div class="s">Edit jobs + send WhatsApp daily schedule</div>
         </div>
       </div>
-      <div class="muted" style="font-size:12px;font-weight:900;">CLEAN v5.6</div>
+      <div class="muted" style="font-size:12px;font-weight:900;">CLEAN v5.7</div>
     </div>
   </div>
 
