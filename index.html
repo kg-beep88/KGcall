@@ -10,14 +10,8 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root{
-      --bg:#ffffff;
-      --txt:#0f172a;
-      --muted:#6b7280;
-      --line:#e6e9ef;
-      --blue:#1a73e8;
+      --bg:#ffffff; --txt:#0f172a; --muted:#6b7280; --line:#e6e9ef; --blue:#1a73e8;
       --shadow: 0 8px 22px rgba(2,6,23,.08);
-
-      /* 6 colors (match Google Calendar colorId) */
       --c-red-bg:#fce8e6; --c-red-bd:#f9bdbb;
       --c-purple-bg:#f3e8fd; --c-purple-bd:#d7b7ff;
       --c-green-bg:#e6f4ea; --c-green-bd:#b7dfc3;
@@ -45,7 +39,6 @@
     button.secondary{background:#fff;color:var(--txt)}
     button.small{padding:8px 10px;border-radius:12px}
     button.plus{width:44px;height:44px;border-radius:14px;font-size:22px;line-height:1;display:grid;place-items:center;background:var(--blue);border-color:transparent}
-    .pillBtn{border-radius:999px}
     .controls{display:grid;grid-template-columns:1.1fr .7fr 1fr 1fr 1.2fr;gap:10px;margin-top:12px}
     .ctrl label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px;font-weight:800}
     input[type="date"],select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#fff}
@@ -66,48 +59,39 @@
     .eventBar{display:flex;align-items:center;padding:4px 8px;border-radius:10px;font-size:12px;font-weight:800;margin-top:6px;cursor:grab;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid var(--line);background:#f3f4f6}
     .eventBar:active{cursor:grabbing}
     .eventText{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
-    /* color styles by data-color (Google Calendar colorId) */
     .eventBar[data-color="11"]{ background:var(--c-red-bg); border-color:var(--c-red-bd); }
     .eventBar[data-color="6"]{ background:var(--c-purple-bg); border-color:var(--c-purple-bd); }
     .eventBar[data-color="10"]{ background:var(--c-green-bg); border-color:var(--c-green-bd); }
     .eventBar[data-color="3"]{ background:var(--c-blue-bg); border-color:var(--c-blue-bd); }
     .eventBar[data-color="5"]{ background:var(--c-yellow-bg); border-color:var(--c-yellow-bd); }
     .eventBar[data-color="2"]{ background:var(--c-teal-bg); border-color:var(--c-teal-bd); }
-
     .moreLink{margin-top:6px;font-size:12px;font-weight:900;color:var(--blue);cursor:pointer;user-select:none}
     .dropHint{outline:2px dashed rgba(26,115,232,.45);outline-offset:-6px}
 
     .modalBackdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;padding:14px;z-index:100}
-    .modal{width:min(760px,100%);background:#fff;border-radius:18px;border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden}
+    .modal{width:min(780px,100%);background:#fff;border-radius:18px;border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden}
     .modalHead{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);background:#fff}
     .modalHead .h{font-weight:900}
     .modalBody{padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .modalBody .full{grid-column:1/-1}
     .modalBody label{display:block;font-size:12px;color:var(--muted);margin:6px 0 6px;font-weight:900}
     .modalBody input,.modalBody textarea,.modalBody select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);outline:none;background:#fff}
-    textarea{min-height:88px;resize:vertical}
+    textarea{min-height:92px;resize:vertical}
     .modalFoot{padding:12px 14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fff}
     .danger{background:#ef4444;border-color:#ef4444}
     .muted{color:var(--muted)}
     .hintSmall{font-size:12px;color:var(--muted);margin-top:6px}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
 
-    .workersBox{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#fff}
-    .workerRow{display:grid;grid-template-columns:1fr 96px 42px;gap:8px;align-items:center;margin-top:8px}
-    .workerRow button{padding:9px 10px}
-
     @media (max-width:520px){
       .wrap{padding:10px}
       .topInner{padding:12px 10px}
-      .brandTitle .t{font-size:16px}
       .controls{grid-template-columns:1fr 1fr;gap:8px}
       .dayCell{min-height:92px;padding:8px 6px 6px}
       .dayMeta{display:none}
       .eventBar{font-size:11px;padding:4px 6px}
       .dowHeader{position:sticky;top:62px;z-index:40;background:#fff}
       .modalBody{grid-template-columns:1fr}
-      .workerRow{grid-template-columns:1fr 88px 42px}
     }
   </style>
 </head>
@@ -121,7 +105,7 @@
           <div class="s">Edit jobs + send WhatsApp daily schedule</div>
         </div>
       </div>
-      <div class="muted" style="font-size:12px;font-weight:900;">CLEAN v5.3</div>
+      <div class="muted" style="font-size:12px;font-weight:900;">CLEAN v5.4</div>
     </div>
   </div>
 
@@ -176,7 +160,7 @@
         </div>
       </div>
 
-      <div class="status" id="status">Ready. Click Authorize to connect Google Calendar. (If you see API 401, click Authorize again.)</div>
+      <div class="status" id="status">Ready. Click Authorize to connect Google Calendar.</div>
       <div class="debug" id="debugBox"></div>
 
       <div class="dowHeader" id="dowHeader" style="display:none;">
@@ -228,22 +212,18 @@
             <option value="2">Teal</option>
           </select>
         </div>
-        <div>
-          <label>Foreman / 头手</label>
-          <select id="fForeman"></select>
-          <div class="hintSmall">Edit list in <span class="mono">config.js</span></div>
+        <div class="hintSmall" style="align-self:end">Drag job to another date: Move. Hold SHIFT to Copy (desktop). Phone will ask Move/Copy.</div>
+
+        <div class="full">
+          <label>Foremen / 头手 (multiple)</label>
+          <select id="fForemen" multiple style="min-height:120px"></select>
+          <div class="hintSmall">Desktop: Ctrl/Command for multi-select. Phone: tap to select/unselect.</div>
         </div>
 
         <div class="full">
-          <label>Workers (name + number)</label>
-          <div class="workersBox">
-            <div id="workersList"></div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-              <button class="secondary small pillBtn" id="addWorkerBtn" type="button">+ Add worker</button>
-              <button class="secondary small pillBtn" id="clearWorkersBtn" type="button">Clear workers</button>
-            </div>
-            <div class="hintSmall">Each line saves into Google Calendar notes (sync). Example: Worker A x 3</div>
-          </div>
+          <label>Workers (multiple)</label>
+          <select id="fWorkers" multiple style="min-height:160px"></select>
+          <div class="hintSmall">No numbers. Edit lists in <span class="mono">config.js</span></div>
         </div>
 
         <div class="full">
@@ -268,7 +248,6 @@
         <div class="full">
           <label>Preview (saved into Google Calendar description)</label>
           <textarea id="preview" readonly></textarea>
-          <div class="hintSmall">Tip: Drag a job to another date to Move. Hold SHIFT while dropping to Copy (desktop). On phone, you will be asked Move/Copy.</div>
         </div>
       </div>
       <div class="modalFoot">
@@ -346,8 +325,25 @@ function sortDayEvents(list){
   return (list||[]).slice().sort((a,b)=>eventSortKey(a)-eventSortKey(b));
 }
 
+function fillMultiSelect(sel, items){
+  sel.innerHTML = "";
+  for(const name of items){
+    const opt = document.createElement("option");
+    opt.value = String(name);
+    opt.textContent = String(name);
+    sel.appendChild(opt);
+  }
+}
+function getMultiSelectValues(sel){
+  return Array.from(sel.selectedOptions).map(o=>o.value).filter(Boolean);
+}
+function setMultiSelectValues(sel, values){
+  const set = new Set((values||[]).map(v=>String(v)));
+  for(const opt of Array.from(sel.options)) opt.selected = set.has(opt.value);
+}
+
 function parseDescription(desc){
-  const out = { addr:"", contact:"", lock:"", foreman:"", workers:[], remove:"", keep:"", protect:"", disposal:"", colorId:"" };
+  const out = { addr:"", contact:"", lock:"", foremen:[], workers:[], remove:"", keep:"", protect:"", disposal:"", colorId:"" };
   const lines = (desc || "").split(/\r?\n/);
   let inWorkers = false;
   for(const raw of lines){
@@ -360,18 +356,25 @@ function parseDescription(desc){
     else if(lower.startsWith("lock no:") || lower.startsWith("lockno:") || lower.startsWith("lock:")){
       out.lock = line.split(":").slice(1).join(":").trim(); inWorkers=false;
     }
-    else if(lower.startsWith("foreman:")) { out.foreman = line.split(":").slice(1).join(":").trim(); inWorkers=false; }
-    else if(lower.startsWith("workers:")) { inWorkers = true; }
+    else if(lower.startsWith("foremen:") || lower.startsWith("foreman:")){
+      const v = line.split(":").slice(1).join(":").trim();
+      out.foremen = v ? v.split(",").map(s=>s.trim()).filter(Boolean) : [];
+      inWorkers=false;
+    }
+    else if(lower.startsWith("workers:")){
+      const v = line.split(":").slice(1).join(":").trim();
+      if(v){
+        out.workers = v.split(",").map(s=>s.trim()).filter(Boolean);
+        inWorkers = false;
+      }else{
+        inWorkers = true;
+      }
+    }
     else if(inWorkers && (line.startsWith("-") || lower.startsWith("worker"))){
       let t = line.replace(/^[-•]\s*/, "");
       t = t.replace(/^worker\s*:\s*/i, "");
-      const m = t.match(/^(.*?)\s*(?:x|\*)\s*(\d+)\s*$/i);
-      if(m){
-        out.workers.push({ name: (m[1]||"").trim(), qty: Number(m[2]||0) });
-      }else{
-        const name = t.trim();
-        if(name) out.workers.push({ name, qty: 0 });
-      }
+      const name = t.trim();
+      if(name) out.workers.push(name);
     }
     else if(lower.startsWith("remove")) { out.remove = line.split(":").slice(1).join(":").trim(); inWorkers=false; }
     else if(lower.startsWith("keep")) { out.keep = line.split(":").slice(1).join(":").trim(); inWorkers=false; }
@@ -383,16 +386,15 @@ function parseDescription(desc){
 }
 
 function buildDescription(fields){
-  const wLines = (fields.workers||[])
-    .filter(w=>w && (w.name||"").trim())
-    .map(w=>`- ${(w.name||"").trim()} x ${Number(w.qty||0)}`);
+  const foremen = (fields.foremen||[]).map(x=>String(x).trim()).filter(Boolean);
+  const workers = (fields.workers||[]).map(x=>String(x).trim()).filter(Boolean);
+
   return [
     `Address: ${fields.addr || "__________"}`,
     `Contact: ${fields.contact || "__________"}`,
     `Lock No: ${fields.lock || "__________"}`,
-    `Foreman: ${fields.foreman || "__________"}`,
-    `Workers:`,
-    ...(wLines.length ? wLines : [`- ________ x 0`]),
+    `Foremen: ${foremen.length ? foremen.join(", ") : "__________"}`,
+    `Workers: ${workers.length ? workers.join(", ") : "__________"}`,
     `SCOPE :`,
     `Remove : ${fields.remove || "__________"}`,
     `Keep : ${fields.keep || "__________"}`,
@@ -410,140 +412,6 @@ function chipLabel(ev){
 function getEventColorId(ev){
   const f = parseDescription(ev.description || "");
   return (ev.colorId || f.colorId || "11");
-}
-
-/* ===== Foreman + Workers UI ===== */
-function buildForemanOptions(){
-  const sel = $("fForeman");
-  if(!sel) return;
-  sel.innerHTML = "";
-  const empty = document.createElement("option");
-  empty.value = "";
-  empty.textContent = "Select foreman…";
-  sel.appendChild(empty);
-  for(const name of FOREMEN_LIST){
-    const opt = document.createElement("option");
-    opt.value = String(name);
-    opt.textContent = String(name);
-    sel.appendChild(opt);
-  }
-  const custom = document.createElement("option");
-  custom.value = "__CUSTOM__";
-  custom.textContent = "Custom…";
-  sel.appendChild(custom);
-}
-
-function workerRowEl(name="", qty=0){
-  const row = document.createElement("div");
-  row.className = "workerRow";
-
-  const sel = document.createElement("select");
-  sel.className = "workerName";
-  const o0 = document.createElement("option");
-  o0.value = "";
-  o0.textContent = "Select worker…";
-  sel.appendChild(o0);
-  for(const w of WORKERS_LIST){
-    const opt = document.createElement("option");
-    opt.value = String(w);
-    opt.textContent = String(w);
-    sel.appendChild(opt);
-  }
-  const oc = document.createElement("option");
-  oc.value = "__CUSTOM__";
-  oc.textContent = "Custom…";
-  sel.appendChild(oc);
-
-  const custom = document.createElement("input");
-  custom.className = "workerCustom";
-  custom.placeholder = "Type name";
-  custom.style.display = "none";
-
-  sel.addEventListener("change", ()=>{
-    if(sel.value === "__CUSTOM__"){
-      custom.style.display = "block";
-      custom.focus();
-    }else{
-      custom.style.display = "none";
-      custom.value = "";
-    }
-    refreshPreview();
-  });
-  custom.addEventListener("input", refreshPreview);
-
-  const qtyIn = document.createElement("input");
-  qtyIn.className = "workerQty";
-  qtyIn.type = "number";
-  qtyIn.min = "0";
-  qtyIn.step = "1";
-  qtyIn.value = String(qty ?? 0);
-  qtyIn.addEventListener("input", refreshPreview);
-
-  const del = document.createElement("button");
-  del.type = "button";
-  del.className = "secondary small";
-  del.textContent = "✕";
-  del.title = "Remove row";
-  del.addEventListener("click", ()=>{
-    row.remove();
-    refreshPreview();
-  });
-
-  // initial values
-  if(WORKERS_LIST.includes(name)){
-    sel.value = name;
-  }else if(name){
-    sel.value = "__CUSTOM__";
-    custom.style.display = "block";
-    custom.value = name;
-  }else{
-    sel.value = "";
-  }
-
-  const left = document.createElement("div");
-  left.style.display = "grid";
-  left.style.gridTemplateColumns = "1fr";
-  left.style.gap = "6px";
-  left.appendChild(sel);
-  left.appendChild(custom);
-
-  row.appendChild(left);
-  row.appendChild(qtyIn);
-  row.appendChild(del);
-  return row;
-}
-
-function setWorkersUI(workers){
-  const box = $("workersList");
-  if(!box) return;
-  box.innerHTML = "";
-  const arr = Array.isArray(workers) ? workers : [];
-  if(arr.length){
-    for(const w of arr){
-      box.appendChild(workerRowEl(w?.name||"", Number(w?.qty||0)));
-    }
-  }else{
-    box.appendChild(workerRowEl("", 0));
-  }
-}
-
-function getWorkersFromUI(){
-  const box = $("workersList");
-  if(!box) return [];
-  const rows = Array.from(box.querySelectorAll(".workerRow"));
-  const out = [];
-  for(const r of rows){
-    const sel = r.querySelector(".workerName");
-    const custom = r.querySelector(".workerCustom");
-    const qtyIn = r.querySelector(".workerQty");
-    let name = "";
-    if(sel && sel.value === "__CUSTOM__") name = (custom?.value||"").trim();
-    else name = (sel?.value||"").trim();
-
-    const qty = Number(qtyIn?.value || 0);
-    if(name) out.push({ name, qty: Number.isFinite(qty) ? qty : 0 });
-  }
-  return out;
 }
 
 /* ===== OAuth / Token ===== */
@@ -725,7 +593,6 @@ function groupByDate(items){
     if(!day) continue;
     (g[day] ||= []).push(ev);
   }
-  // sort each day by time
   for(const k of Object.keys(g)) g[k] = sortDayEvents(g[k]);
   return g;
 }
@@ -946,8 +813,8 @@ function openModal(mode, ev=null){
   $("modalBk").style.display="flex";
 
   const dateStr = $("datePick").value || isoDateLocal(new Date());
-
-  buildForemanOptions();
+  fillMultiSelect($("fForemen"), FOREMEN_LIST);
+  fillMultiSelect($("fWorkers"), WORKERS_LIST);
 
   if(mode==="new"){
     $("modalTitle").textContent="New Job";
@@ -961,8 +828,8 @@ function openModal(mode, ev=null){
     $("fContact").value = "";
     $("fLock").value = "";
     $("fColor").value = "11";
-    $("fForeman").value = "";
-    setWorkersUI([]);
+    setMultiSelectValues($("fForemen"), []);
+    setMultiSelectValues($("fWorkers"), []);
     $("fRemove").value = "";
     $("fKeep").value = "";
     $("fProtect").value = "";
@@ -982,8 +849,8 @@ function openModal(mode, ev=null){
     $("fContact").value = f.contact || "";
     $("fLock").value = f.lock || "";
     $("fColor").value = (ev.colorId || f.colorId || "11");
-    $("fForeman").value = f.foreman || "";
-    setWorkersUI(f.workers || []);
+    setMultiSelectValues($("fForemen"), f.foremen || []);
+    setMultiSelectValues($("fWorkers"), f.workers || []);
     $("fRemove").value = f.remove || "";
     $("fKeep").value = f.keep || "";
     $("fProtect").value = f.protect || "";
@@ -998,22 +865,12 @@ function closeModal(){
 }
 
 function collectFields(){
-  // handle custom foreman
-  let foreman = ($("fForeman").value||"").trim();
-  if(foreman === "__CUSTOM__"){
-    const v = prompt("Type foreman name:", "");
-    if(v !== null){
-      foreman = v.trim();
-      // keep custom selected label
-      $("fForeman").value = "__CUSTOM__";
-    }
-  }
   return {
     addr: ($("fAddr").value||"").trim(),
     contact: ($("fContact").value||"").trim(),
     lock: ($("fLock").value||"").trim(),
-    foreman,
-    workers: getWorkersFromUI(),
+    foremen: getMultiSelectValues($("fForemen")),
+    workers: getMultiSelectValues($("fWorkers")),
     colorId: ($("fColor").value||"11").trim(),
     remove: ($("fRemove").value||"").trim(),
     keep: ($("fKeep").value||"").trim(),
@@ -1030,8 +887,7 @@ function buildEventPayload(dateStr){
   const desc = buildDescription(fields);
   const addr = (fields.addr || "JOB").trim();
 
-  // Title shows ADDRESS ONLY
-  const summary = `${addr}`.trim();
+  const summary = `${addr}`.trim(); // title shows ADDRESS ONLY
   const colorId = fields.colorId || "11";
 
   const time = ($("fTime").value || "").trim();
@@ -1173,8 +1029,8 @@ function shiftDays(delta){
 /* ===== Wire UI ===== */
 function wire(){
   $("datePick").value = isoDateLocal(new Date());
-  buildForemanOptions();
-  setWorkersUI([]);
+  fillMultiSelect($("fForemen"), FOREMEN_LIST);
+  fillMultiSelect($("fWorkers"), WORKERS_LIST);
 
   $("authBtn").addEventListener("click", authorize);
   $("logoutBtn").addEventListener("click", logout);
@@ -1196,19 +1052,10 @@ function wire(){
   $("closeModalBtn").addEventListener("click", closeModal);
   $("modalBk").addEventListener("click", (e)=>{ if(e.target.id==="modalBk") closeModal(); });
 
-  for(const id of ["fDate","fTime","fAddr","fContact","fLock","fForeman","fColor","fRemove","fKeep","fProtect","fDisposal"]){
+  for(const id of ["fDate","fTime","fAddr","fContact","fLock","fForemen","fWorkers","fColor","fRemove","fKeep","fProtect","fDisposal"]){
     $(id).addEventListener("input", refreshPreview);
     $(id).addEventListener("change", refreshPreview);
   }
-
-  $("addWorkerBtn").addEventListener("click", ()=>{
-    $("workersList").appendChild(workerRowEl("", 0));
-    refreshPreview();
-  });
-  $("clearWorkersBtn").addEventListener("click", ()=>{
-    setWorkersUI([]);
-    refreshPreview();
-  });
 
   $("clearBtn").addEventListener("click", ()=>{
     $("fTime").value = "";
@@ -1216,8 +1063,8 @@ function wire(){
     $("fContact").value = "";
     $("fLock").value = "";
     $("fColor").value = "11";
-    $("fForeman").value = "";
-    setWorkersUI([]);
+    setMultiSelectValues($("fForemen"), []);
+    setMultiSelectValues($("fWorkers"), []);
     $("fRemove").value = "";
     $("fKeep").value = "";
     $("fProtect").value = "";

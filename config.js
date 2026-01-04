@@ -6,7 +6,7 @@ window.APP_CONFIG = {
   CALENDAR_ID: "primary",              // default calendar; you can choose in app
 
   // EDIT THESE LISTS (for dropdowns)
-  FOREMEN: ["MunZai", "阿牛", "Ah Hock", "阿坤","阿通", "阿辉", "阿蔡", "阿赖",
+  FOREMEN: ["阿牛", "Ah Hock", "阿坤","阿通", "阿辉", "阿蔡", "阿赖",
   "阿耀", "阿权", "阿明", "阿文","阿志", "阿平", "阿川", "阿华","阿兴", "阿以", "阿亿",
   "阿Siong","阿仁", "阿LIM", "阿Kong", "阿Kiong", "阿DI", "蜡笔", "老虎", "忠发", "小生",
   "小牛", "子锋", "伟杰", "仔仔", "Ivan", "Ebi", "Ah Ngei", "阿生", "阿汉", "阿富", "阿宝", "阿伟",

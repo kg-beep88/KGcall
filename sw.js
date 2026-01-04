@@ -1,4 +1,4 @@
-const CACHE = "kg-cal2wa-clean-v5-3";
+const CACHE = "kg-cal2wa-clean-v5-4";
 const ASSETS = [
   "./",
   "./index.html",
