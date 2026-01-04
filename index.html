@@ -1,0 +1,1289 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>KG Demolish Calendar</title>
+  <link rel="manifest" href="manifest.webmanifest"/>
+  <meta name="theme-color" content="#111827"/>
+  <script src="config.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root{
+      --bg:#ffffff;
+      --txt:#0f172a;
+      --muted:#6b7280;
+      --line:#e6e9ef;
+      --blue:#1a73e8;
+      --shadow: 0 8px 22px rgba(2,6,23,.08);
+
+      /* 6 colors (match Google Calendar colorId) */
+      --c-red-bg:#fce8e6; --c-red-bd:#f9bdbb;
+      --c-purple-bg:#f3e8fd; --c-purple-bd:#d7b7ff;
+      --c-green-bg:#e6f4ea; --c-green-bd:#b7dfc3;
+      --c-blue-bg:#e8f0fe; --c-blue-bd:#d2e3fc;
+      --c-yellow-bg:#fef7e0; --c-yellow-bd:#fdd663;
+      --c-teal-bg:#e8f5e9; --c-teal-bd:#a5d6a7;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--txt);background:var(--bg);overflow-x:hidden}
+    .topbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line)}
+    .topInner{max-width:1200px;margin:0 auto;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .logo{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#111827,#1f2937);display:grid;place-items:center;color:#fff;font-weight:900}
+    .brandTitle{display:flex;flex-direction:column;gap:2px}
+    .brandTitle .t{font-weight:900}
+    .brandTitle .s{font-size:12px;color:var(--muted)}
+    .wrap{max-width:1200px;margin:0 auto;padding:14px}
+    .card{border:1px solid var(--line);border-radius:18px;padding:14px;background:#fff}
+    .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+    .left,.right{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .titlePill{padding:7px 12px;border-radius:999px;border:1px solid var(--line);font-weight:900;background:#fff}
+    button,select,input,textarea{font:inherit}
+    button{border:1px solid var(--line);background:#111827;color:#fff;border-radius:12px;padding:10px 12px;font-weight:900;cursor:pointer}
+    button.secondary{background:#fff;color:var(--txt)}
+    button.small{padding:8px 10px;border-radius:12px}
+    button.plus{width:44px;height:44px;border-radius:14px;font-size:22px;line-height:1;display:grid;place-items:center;background:var(--blue);border-color:transparent}
+    .pillBtn{border-radius:999px}
+    .controls{display:grid;grid-template-columns:1.1fr .7fr 1fr 1fr 1.2fr;gap:10px;margin-top:12px}
+    .ctrl label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px;font-weight:800}
+    input[type="date"],select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#fff}
+    .whoami{font-size:12px;color:var(--muted);margin-top:6px}
+    .status{margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#fafbff;color:#374151;font-size:12px}
+    .debug{margin-top:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:12px;color:#111827;display:none;white-space:pre-wrap}
+    .dowHeader{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--line);border-bottom:0;border-radius:16px 16px 0 0;overflow:hidden;margin-top:12px}
+    .dowHeader>div{padding:10px 12px;font-size:12px;font-weight:900;color:var(--muted);border-right:1px solid var(--line);text-transform:uppercase;letter-spacing:.06em;background:#fff}
+    .dowHeader>div:last-child{border-right:0}
+    .monthGrid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--line);border-top:0;border-radius:0 0 16px 16px;overflow:hidden}
+    .dayCell{min-height:140px;padding:10px 10px 8px;border-right:1px solid var(--line);border-top:1px solid var(--line);background:#fff;transition:background .12s ease;min-width:0}
+    .dayCell:nth-child(7n){border-right:0}
+    .dayCell:hover{background:#fafbff}
+    .dayTop{display:flex;justify-content:space-between;align-items:center;margin:0 0 8px}
+    .dayNum{width:26px;height:26px;border-radius:999px;display:grid;place-items:center;font-weight:900;font-size:12px;color:#111827}
+    .dayNum.today{background:var(--blue);color:#fff}
+    .dayMeta{font-size:12px;font-weight:900;color:var(--muted)}
+    .eventBar{display:flex;align-items:center;padding:4px 8px;border-radius:10px;font-size:12px;font-weight:800;margin-top:6px;cursor:grab;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid var(--line);background:#f3f4f6}
+    .eventBar:active{cursor:grabbing}
+    .eventText{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+    /* color styles by data-color (Google Calendar colorId) */
+    .eventBar[data-color="11"]{ background:var(--c-red-bg); border-color:var(--c-red-bd); }
+    .eventBar[data-color="6"]{ background:var(--c-purple-bg); border-color:var(--c-purple-bd); }
+    .eventBar[data-color="10"]{ background:var(--c-green-bg); border-color:var(--c-green-bd); }
+    .eventBar[data-color="3"]{ background:var(--c-blue-bg); border-color:var(--c-blue-bd); }
+    .eventBar[data-color="5"]{ background:var(--c-yellow-bg); border-color:var(--c-yellow-bd); }
+    .eventBar[data-color="2"]{ background:var(--c-teal-bg); border-color:var(--c-teal-bd); }
+
+    .moreLink{margin-top:6px;font-size:12px;font-weight:900;color:var(--blue);cursor:pointer;user-select:none}
+    .dropHint{outline:2px dashed rgba(26,115,232,.45);outline-offset:-6px}
+
+    .modalBackdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;padding:14px;z-index:100}
+    .modal{width:min(760px,100%);background:#fff;border-radius:18px;border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden}
+    .modalHead{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);background:#fff}
+    .modalHead .h{font-weight:900}
+    .modalBody{padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .modalBody .full{grid-column:1/-1}
+    .modalBody label{display:block;font-size:12px;color:var(--muted);margin:6px 0 6px;font-weight:900}
+    .modalBody input,.modalBody textarea,.modalBody select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);outline:none;background:#fff}
+    textarea{min-height:88px;resize:vertical}
+    .modalFoot{padding:12px 14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fff}
+    .danger{background:#ef4444;border-color:#ef4444}
+    .muted{color:var(--muted)}
+    .hintSmall{font-size:12px;color:var(--muted);margin-top:6px}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+
+    .workersBox{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#fff}
+    .workerRow{display:grid;grid-template-columns:1fr 96px 42px;gap:8px;align-items:center;margin-top:8px}
+    .workerRow button{padding:9px 10px}
+
+    @media (max-width:520px){
+      .wrap{padding:10px}
+      .topInner{padding:12px 10px}
+      .brandTitle .t{font-size:16px}
+      .controls{grid-template-columns:1fr 1fr;gap:8px}
+      .dayCell{min-height:92px;padding:8px 6px 6px}
+      .dayMeta{display:none}
+      .eventBar{font-size:11px;padding:4px 6px}
+      .dowHeader{position:sticky;top:62px;z-index:40;background:#fff}
+      .modalBody{grid-template-columns:1fr}
+      .workerRow{grid-template-columns:1fr 88px 42px}
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topInner">
+      <div class="brand">
+        <div class="logo">KG</div>
+        <div class="brandTitle">
+          <div class="t">KG Demolish Calendar</div>
+          <div class="s">Edit jobs + send WhatsApp daily schedule</div>
+        </div>
+      </div>
+      <div class="muted" style="font-size:12px;font-weight:900;">CLEAN v5.3</div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="toolbar">
+        <div class="left">
+          <button class="secondary small" id="todayBtn">Today</button>
+          <button class="secondary small" id="prevBtn">◀</button>
+          <button class="secondary small" id="nextBtn">▶</button>
+          <div class="titlePill" id="monthLabel">Month</div>
+        </div>
+        <div class="right">
+          <button class="secondary small" id="loadBtn">Load</button>
+          <button class="secondary small" id="resetBtn" title="Clear app cache if updates are not showing">Reset Cache</button>
+          <button class="plus" id="newBtn" title="Add job">+</button>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="ctrl">
+          <label>Date</label>
+          <input id="datePick" type="date"/>
+        </div>
+        <div class="ctrl">
+          <label>View</label>
+          <select id="viewSel">
+            <option value="month" selected>Month</option>
+            <option value="day">Day</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <label>Account</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="secondary" id="authBtn">Authorize</button>
+            <button class="secondary" id="logoutBtn">Logout</button>
+          </div>
+          <div class="whoami" id="whoami">Not signed in</div>
+        </div>
+        <div class="ctrl">
+          <label>WhatsApp</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="secondary" id="copyWaBtn">Copy</button>
+            <button id="openWaBtn">Pop-out</button>
+          </div>
+          <div class="whoami">Exports selected date only</div>
+        </div>
+        <div class="ctrl">
+          <label>Calendar</label>
+          <select id="calSel"><option value="primary">Primary</option></select>
+          <div class="whoami">Pick a writable calendar</div>
+        </div>
+      </div>
+
+      <div class="status" id="status">Ready. Click Authorize to connect Google Calendar. (If you see API 401, click Authorize again.)</div>
+      <div class="debug" id="debugBox"></div>
+
+      <div class="dowHeader" id="dowHeader" style="display:none;">
+        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+      </div>
+      <div class="monthGrid" id="monthGrid" style="display:none;"></div>
+      <div id="dayList" style="display:none;margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div class="modalBackdrop" id="modalBk">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="h" id="modalTitle">New Job</div>
+        <button class="secondary small" id="closeModalBtn">✕</button>
+      </div>
+      <div class="modalBody">
+        <div>
+          <label>Job date</label>
+          <input id="fDate" type="date"/>
+        </div>
+        <div>
+          <label>Time (optional)</label>
+          <input id="fTime" placeholder="09:00 (optional)"/>
+        </div>
+
+        <div class="full">
+          <label>Address</label>
+          <input id="fAddr" placeholder="Address"/>
+        </div>
+
+        <div>
+          <label>Contact</label>
+          <input id="fContact" placeholder="Name / Phone"/>
+        </div>
+        <div>
+          <label>Lock No</label>
+          <input id="fLock" placeholder="Lock number"/>
+        </div>
+
+        <div>
+          <label>Color</label>
+          <select id="fColor">
+            <option value="11">Red</option>
+            <option value="6">Purple</option>
+            <option value="10">Green</option>
+            <option value="3">Blue</option>
+            <option value="5">Yellow</option>
+            <option value="2">Teal</option>
+          </select>
+        </div>
+        <div>
+          <label>Foreman / 头手</label>
+          <select id="fForeman"></select>
+          <div class="hintSmall">Edit list in <span class="mono">config.js</span></div>
+        </div>
+
+        <div class="full">
+          <label>Workers (name + number)</label>
+          <div class="workersBox">
+            <div id="workersList"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+              <button class="secondary small pillBtn" id="addWorkerBtn" type="button">+ Add worker</button>
+              <button class="secondary small pillBtn" id="clearWorkersBtn" type="button">Clear workers</button>
+            </div>
+            <div class="hintSmall">Each line saves into Google Calendar notes (sync). Example: Worker A x 3</div>
+          </div>
+        </div>
+
+        <div class="full">
+          <label>Remove</label>
+          <input id="fRemove" placeholder="Remove :"/>
+        </div>
+
+        <div>
+          <label>Keep</label>
+          <input id="fKeep" placeholder="Keep :"/>
+        </div>
+        <div>
+          <label>Protect</label>
+          <input id="fProtect" placeholder="Protect :"/>
+        </div>
+
+        <div class="full">
+          <label>Disposal</label>
+          <input id="fDisposal" placeholder="Disposal :"/>
+        </div>
+
+        <div class="full">
+          <label>Preview (saved into Google Calendar description)</label>
+          <textarea id="preview" readonly></textarea>
+          <div class="hintSmall">Tip: Drag a job to another date to Move. Hold SHIFT while dropping to Copy (desktop). On phone, you will be asked Move/Copy.</div>
+        </div>
+      </div>
+      <div class="modalFoot">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="secondary" id="clearBtn">Clear</button>
+          <button class="danger" id="deleteBtn" style="display:none;">Delete</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="secondary" id="copyToBtn" style="display:none;">Copy to date</button>
+          <button id="saveBtn">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const CFG = window.APP_CONFIG || {};
+const CLIENT_ID = CFG.CLIENT_ID || "";
+const DEFAULT_FILTER = CFG.DEFAULT_FILTER || "#KG";
+const DEFAULT_DURATION_MIN = Number(CFG.DEFAULT_DURATION_MIN || 120);
+const DEFAULT_CALENDAR_ID = CFG.CALENDAR_ID || "primary";
+const FOREMEN_LIST = Array.isArray(CFG.FOREMEN) ? CFG.FOREMEN : [];
+const WORKERS_LIST = Array.isArray(CFG.WORKERS) ? CFG.WORKERS : [];
+let ACTIVE_CALENDAR_ID = localStorage.getItem("kg_active_calendar") || DEFAULT_CALENDAR_ID;
+
+const SCOPES = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly openid email";
+let accessToken = "";
+let tokenExpiryMs = 0;
+let tokenClient = null;
+let _tokenWaiter = null;
+
+let lastEvents = [];
+let modalMode = "new";
+let editingEvent = null;
+
+const $ = (id)=>document.getElementById(id);
+function setStatus(t){ $("status").textContent = t; }
+function dbg(t){
+  const b = $("debugBox");
+  b.style.display = "block";
+  b.textContent = String(t);
+  console.log("[KG]", t);
+}
+window.addEventListener("error", (e)=>{
+  try{
+    const msg = (e?.message || "JS error") + (e?.filename ? (" @ " + e.filename + ":" + e.lineno) : "");
+    dbg(msg);
+    alert(msg);
+  }catch{}
+});
+
+function isoDateLocal(d){
+  const x = new Date(d);
+  const y = x.getFullYear();
+  const m = String(x.getMonth()+1).padStart(2,"0");
+  const da = String(x.getDate()).padStart(2,"0");
+  return `${y}-${m}-${da}`;
+}
+function pad2(n){ return String(n).padStart(2,"0"); }
+function escapeHtml(s){
+  return String(s||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+function fmtTime(ev){
+  const dt = new Date(ev.start.dateTime);
+  return `${pad2(dt.getHours())}:${pad2(dt.getMinutes())}`;
+}
+function eventSortKey(ev){
+  if(ev.start && ev.start.dateTime) return new Date(ev.start.dateTime).getTime();
+  const day = ev.start?.date || (ev.start?.dateTime ? isoDateLocal(new Date(ev.start.dateTime)) : "");
+  if(day) return new Date(day + "T23:59:59").getTime();
+  return Number.MAX_SAFE_INTEGER;
+}
+function sortDayEvents(list){
+  return (list||[]).slice().sort((a,b)=>eventSortKey(a)-eventSortKey(b));
+}
+
+function parseDescription(desc){
+  const out = { addr:"", contact:"", lock:"", foreman:"", workers:[], remove:"", keep:"", protect:"", disposal:"", colorId:"" };
+  const lines = (desc || "").split(/\r?\n/);
+  let inWorkers = false;
+  for(const raw of lines){
+    const line = (raw || "").trim();
+    if(!line) continue;
+    const lower = line.toLowerCase();
+
+    if(lower.startsWith("address:")) { out.addr = line.slice(8).trim(); inWorkers=false; }
+    else if(lower.startsWith("contact:")) { out.contact = line.slice(8).trim(); inWorkers=false; }
+    else if(lower.startsWith("lock no:") || lower.startsWith("lockno:") || lower.startsWith("lock:")){
+      out.lock = line.split(":").slice(1).join(":").trim(); inWorkers=false;
+    }
+    else if(lower.startsWith("foreman:")) { out.foreman = line.split(":").slice(1).join(":").trim(); inWorkers=false; }
+    else if(lower.startsWith("workers:")) { inWorkers = true; }
+    else if(inWorkers && (line.startsWith("-") || lower.startsWith("worker"))){
+      let t = line.replace(/^[-•]\s*/, "");
+      t = t.replace(/^worker\s*:\s*/i, "");
+      const m = t.match(/^(.*?)\s*(?:x|\*)\s*(\d+)\s*$/i);
+      if(m){
+        out.workers.push({ name: (m[1]||"").trim(), qty: Number(m[2]||0) });
+      }else{
+        const name = t.trim();
+        if(name) out.workers.push({ name, qty: 0 });
+      }
+    }
+    else if(lower.startsWith("remove")) { out.remove = line.split(":").slice(1).join(":").trim(); inWorkers=false; }
+    else if(lower.startsWith("keep")) { out.keep = line.split(":").slice(1).join(":").trim(); inWorkers=false; }
+    else if(lower.startsWith("protect")) { out.protect = line.split(":").slice(1).join(":").trim(); inWorkers=false; }
+    else if(lower.startsWith("disposal")) { out.disposal = line.split(":").slice(1).join(":").trim(); inWorkers=false; }
+    else if(lower.startsWith("color:")) { out.colorId = line.split(":").slice(1).join(":").trim(); inWorkers=false; }
+  }
+  return out;
+}
+
+function buildDescription(fields){
+  const wLines = (fields.workers||[])
+    .filter(w=>w && (w.name||"").trim())
+    .map(w=>`- ${(w.name||"").trim()} x ${Number(w.qty||0)}`);
+  return [
+    `Address: ${fields.addr || "__________"}`,
+    `Contact: ${fields.contact || "__________"}`,
+    `Lock No: ${fields.lock || "__________"}`,
+    `Foreman: ${fields.foreman || "__________"}`,
+    `Workers:`,
+    ...(wLines.length ? wLines : [`- ________ x 0`]),
+    `SCOPE :`,
+    `Remove : ${fields.remove || "__________"}`,
+    `Keep : ${fields.keep || "__________"}`,
+    `Protect : ${fields.protect || "_______"}`,
+    `Disposal : ${fields.disposal || "____________________"}`,
+    `Color: ${fields.colorId || "11"}`,
+    `${DEFAULT_FILTER}`
+  ].join("\n");
+}
+
+function chipLabel(ev){
+  const f = parseDescription(ev.description || "");
+  return f.addr || ev.summary || "(No address)";
+}
+function getEventColorId(ev){
+  const f = parseDescription(ev.description || "");
+  return (ev.colorId || f.colorId || "11");
+}
+
+/* ===== Foreman + Workers UI ===== */
+function buildForemanOptions(){
+  const sel = $("fForeman");
+  if(!sel) return;
+  sel.innerHTML = "";
+  const empty = document.createElement("option");
+  empty.value = "";
+  empty.textContent = "Select foreman…";
+  sel.appendChild(empty);
+  for(const name of FOREMEN_LIST){
+    const opt = document.createElement("option");
+    opt.value = String(name);
+    opt.textContent = String(name);
+    sel.appendChild(opt);
+  }
+  const custom = document.createElement("option");
+  custom.value = "__CUSTOM__";
+  custom.textContent = "Custom…";
+  sel.appendChild(custom);
+}
+
+function workerRowEl(name="", qty=0){
+  const row = document.createElement("div");
+  row.className = "workerRow";
+
+  const sel = document.createElement("select");
+  sel.className = "workerName";
+  const o0 = document.createElement("option");
+  o0.value = "";
+  o0.textContent = "Select worker…";
+  sel.appendChild(o0);
+  for(const w of WORKERS_LIST){
+    const opt = document.createElement("option");
+    opt.value = String(w);
+    opt.textContent = String(w);
+    sel.appendChild(opt);
+  }
+  const oc = document.createElement("option");
+  oc.value = "__CUSTOM__";
+  oc.textContent = "Custom…";
+  sel.appendChild(oc);
+
+  const custom = document.createElement("input");
+  custom.className = "workerCustom";
+  custom.placeholder = "Type name";
+  custom.style.display = "none";
+
+  sel.addEventListener("change", ()=>{
+    if(sel.value === "__CUSTOM__"){
+      custom.style.display = "block";
+      custom.focus();
+    }else{
+      custom.style.display = "none";
+      custom.value = "";
+    }
+    refreshPreview();
+  });
+  custom.addEventListener("input", refreshPreview);
+
+  const qtyIn = document.createElement("input");
+  qtyIn.className = "workerQty";
+  qtyIn.type = "number";
+  qtyIn.min = "0";
+  qtyIn.step = "1";
+  qtyIn.value = String(qty ?? 0);
+  qtyIn.addEventListener("input", refreshPreview);
+
+  const del = document.createElement("button");
+  del.type = "button";
+  del.className = "secondary small";
+  del.textContent = "✕";
+  del.title = "Remove row";
+  del.addEventListener("click", ()=>{
+    row.remove();
+    refreshPreview();
+  });
+
+  // initial values
+  if(WORKERS_LIST.includes(name)){
+    sel.value = name;
+  }else if(name){
+    sel.value = "__CUSTOM__";
+    custom.style.display = "block";
+    custom.value = name;
+  }else{
+    sel.value = "";
+  }
+
+  const left = document.createElement("div");
+  left.style.display = "grid";
+  left.style.gridTemplateColumns = "1fr";
+  left.style.gap = "6px";
+  left.appendChild(sel);
+  left.appendChild(custom);
+
+  row.appendChild(left);
+  row.appendChild(qtyIn);
+  row.appendChild(del);
+  return row;
+}
+
+function setWorkersUI(workers){
+  const box = $("workersList");
+  if(!box) return;
+  box.innerHTML = "";
+  const arr = Array.isArray(workers) ? workers : [];
+  if(arr.length){
+    for(const w of arr){
+      box.appendChild(workerRowEl(w?.name||"", Number(w?.qty||0)));
+    }
+  }else{
+    box.appendChild(workerRowEl("", 0));
+  }
+}
+
+function getWorkersFromUI(){
+  const box = $("workersList");
+  if(!box) return [];
+  const rows = Array.from(box.querySelectorAll(".workerRow"));
+  const out = [];
+  for(const r of rows){
+    const sel = r.querySelector(".workerName");
+    const custom = r.querySelector(".workerCustom");
+    const qtyIn = r.querySelector(".workerQty");
+    let name = "";
+    if(sel && sel.value === "__CUSTOM__") name = (custom?.value||"").trim();
+    else name = (sel?.value||"").trim();
+
+    const qty = Number(qtyIn?.value || 0);
+    if(name) out.push({ name, qty: Number.isFinite(qty) ? qty : 0 });
+  }
+  return out;
+}
+
+/* ===== OAuth / Token ===== */
+async function fetchWhoAmI(){
+  try{
+    const res = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
+      headers: { "Authorization": `Bearer ${accessToken}` }
+    });
+    if(!res.ok) return null;
+    return res.json();
+  }catch{ return null; }
+}
+
+async function ensureTokenClient(){
+  if(!CLIENT_ID || CLIENT_ID.includes("PASTE_YOUR")) throw new Error("CLIENT_ID not set in config.js");
+  if(!(window.google && google.accounts && google.accounts.oauth2)) throw new Error("Google login script not loaded. Disable adblock / refresh.");
+  if(!tokenClient){
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: async (resp)=>{
+        try{
+          if(resp.error) throw new Error(resp.error);
+          accessToken = resp.access_token || "";
+          const expiresIn = Number(resp.expires_in || 3600);
+          tokenExpiryMs = Date.now() + expiresIn * 1000;
+
+          const me = await fetchWhoAmI();
+          $("whoami").textContent = me?.email ? (`Signed in: ${me.email}`) : "Signed in";
+
+          await initCalendarsUI();
+          if(_tokenWaiter){ _tokenWaiter.resolve(true); _tokenWaiter = null; }
+          await load();
+        }catch(e){
+          if(_tokenWaiter){ _tokenWaiter.reject(e); _tokenWaiter = null; }
+          dbg(e.message||e);
+          alert(e.message || String(e));
+        }
+      }
+    });
+  }
+  return tokenClient;
+}
+
+async function requestToken(promptMode){
+  await ensureTokenClient();
+  return new Promise((resolve, reject)=>{
+    _tokenWaiter = { resolve, reject };
+    try{
+      tokenClient.requestAccessToken({ prompt: promptMode });
+    }catch(e){
+      _tokenWaiter = null;
+      reject(e);
+    }
+  });
+}
+
+async function silentRefreshToken(forceConsent=false){
+  try{
+    await requestToken("");
+  }catch(e){
+    if(forceConsent){
+      await requestToken("consent");
+      return;
+    }
+    dbg("Session expired. Please click Authorize again.");
+    setStatus("Session expired. Click Authorize.");
+    accessToken = "";
+    tokenExpiryMs = 0;
+  }
+}
+
+async function authorize(){
+  try{
+    setStatus("Authorizing…");
+    await requestToken("consent");
+  }catch(e){
+    dbg(e.message||e);
+    alert(e.message || String(e));
+    setStatus("Authorize failed.");
+  }
+}
+
+function logout(){
+  accessToken = "";
+  tokenExpiryMs = 0;
+  $("whoami").textContent = "Not signed in";
+  setStatus("Logged out.");
+}
+
+/* ===== Reset Cache ===== */
+async function resetAppCache(){
+  if(!confirm("Reset app cache? This will reload the page.")) return;
+  try{
+    if("serviceWorker" in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    if("caches" in window){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  }catch(e){
+    dbg(e.message || e);
+  }
+  location.reload();
+}
+
+/* ===== API ===== */
+async function apiFetch(url, opts={}, _retry=true){
+  if(!accessToken || (tokenExpiryMs && Date.now() > (tokenExpiryMs - 60_000))){
+    await silentRefreshToken();
+  }
+  if(!accessToken) throw new Error("Not authorized");
+
+  const res = await fetch(url, {
+    ...opts,
+    headers: { ...(opts.headers||{}), "Authorization": `Bearer ${accessToken}` }
+  });
+  const text = await res.text();
+
+  if(res.status === 401 && _retry){
+    accessToken = "";
+    tokenExpiryMs = 0;
+    await silentRefreshToken(true);
+    return apiFetch(url, opts, false);
+  }
+
+  if(!res.ok) throw new Error(`API ${res.status}: ${text.slice(0,220)}`);
+  return text ? JSON.parse(text) : {};
+}
+
+async function fetchWritableCalendars(){
+  const url = "https://www.googleapis.com/calendar/v3/users/me/calendarList?minAccessRole=writer&maxResults=250";
+  const data = await apiFetch(url);
+  const items = (data.items||[]).map(c=>({ id:c.id, summary:c.summary||c.id, primary:!!c.primary }));
+  items.sort((a,b)=>(b.primary?1:0)-(a.primary?1:0) || a.summary.localeCompare(b.summary));
+  return items;
+}
+
+async function initCalendarsUI(){
+  const sel = $("calSel");
+  try{
+    const items = await fetchWritableCalendars();
+    sel.innerHTML = "";
+    for(const c of items){
+      const opt = document.createElement("option");
+      opt.value = c.id;
+      opt.textContent = c.primary ? `Primary — ${c.summary}` : c.summary;
+      sel.appendChild(opt);
+    }
+    if(items.find(x=>x.id===ACTIVE_CALENDAR_ID)) sel.value = ACTIVE_CALENDAR_ID;
+    else { sel.value = items[0]?.id || "primary"; setActiveCalendar(sel.value); }
+    sel.onchange = async ()=>{ setActiveCalendar(sel.value); setStatus("Calendar selected"); await load(); };
+  }catch{
+    sel.innerHTML = `<option value="primary">Primary</option>`;
+    sel.value = "primary";
+    setActiveCalendar("primary");
+  }
+}
+
+function setActiveCalendar(id){
+  ACTIVE_CALENDAR_ID = id || DEFAULT_CALENDAR_ID;
+  localStorage.setItem("kg_active_calendar", ACTIVE_CALENDAR_ID);
+}
+
+/* ===== Calendar logic ===== */
+function monthRange(anchor){
+  const d = new Date(anchor);
+  const first = new Date(d.getFullYear(), d.getMonth(), 1);
+  const next = new Date(d.getFullYear(), d.getMonth()+1, 1);
+  return { first, next };
+}
+
+function groupByDate(items){
+  const g = {};
+  for(const ev of items){
+    const day = ev.start.date || (ev.start.dateTime ? isoDateLocal(new Date(ev.start.dateTime)) : "");
+    if(!day) continue;
+    (g[day] ||= []).push(ev);
+  }
+  // sort each day by time
+  for(const k of Object.keys(g)) g[k] = sortDayEvents(g[k]);
+  return g;
+}
+
+function eventMatchesFilter(ev){
+  const hay = ((ev.summary||"") + " " + (ev.description||"") + " " + (ev.location||"")).toLowerCase();
+  return hay.includes(DEFAULT_FILTER.toLowerCase());
+}
+
+async function fetchEvents(){
+  const view = $("viewSel").value;
+  const dateStr = $("datePick").value;
+  const anchor = new Date(dateStr+"T00:00:00");
+  let timeMin, timeMax, range=null;
+
+  if(view==="month"){
+    range = monthRange(anchor);
+    timeMin = range.first.toISOString();
+    timeMax = range.next.toISOString();
+  }else{
+    const start = new Date(anchor);
+    const end = new Date(anchor); end.setDate(end.getDate()+1);
+    timeMin = start.toISOString();
+    timeMax = end.toISOString();
+  }
+
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(ACTIVE_CALENDAR_ID)}/events?singleEvents=true&orderBy=startTime&maxResults=2500&timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`;
+  const data = await apiFetch(url);
+  const items = (data.items||[]).filter(eventMatchesFilter);
+  return { items, range };
+}
+
+async function load(){
+  try{
+    if(!accessToken){
+      $("monthGrid").style.display="none";
+      $("dowHeader").style.display="none";
+      $("dayList").style.display="none";
+      setStatus("Not authorized. Click Authorize.");
+      return;
+    }
+    setStatus("Loading…");
+    const view = $("viewSel").value;
+    const { items, range } = await fetchEvents();
+    lastEvents = items;
+
+    if(view==="month"){
+      renderMonth(items, range);
+      $("dayList").style.display="none";
+    }else{
+      $("monthGrid").style.display="none";
+      $("dowHeader").style.display="none";
+      renderDay(items);
+    }
+    setStatus("Loaded.");
+  }catch(e){
+    dbg(e.message||e);
+    setStatus(e.message || String(e));
+    if(String(e.message||"").includes("API 404")){
+      setStatus("Calendar not found. Choose from Calendar dropdown.");
+      try{ await initCalendarsUI(); }catch{}
+    }
+  }
+}
+
+function renderDay(items){
+  $("dayList").style.display="block";
+  const box = $("dayList");
+  box.innerHTML = "<div style='font-weight:900'>Jobs (selected date) — sorted by time</div>";
+
+  const itemsSorted = sortDayEvents(items);
+
+  if(!itemsSorted.length){
+    const p = document.createElement("div");
+    p.className="muted";
+    p.style.marginTop="8px";
+    p.textContent="(no job)";
+    box.appendChild(p);
+    return;
+  }
+
+  for(const ev of itemsSorted){
+    const row = document.createElement("div");
+    row.style.marginTop="10px";
+    row.style.border="1px solid var(--line)";
+    row.style.borderRadius="14px";
+    row.style.padding="10px 12px";
+    row.style.display="flex";
+    row.style.justifyContent="space-between";
+    row.style.gap="10px";
+    row.style.alignItems="center";
+    row.style.borderLeft = "8px solid transparent";
+
+    const colorId = getEventColorId(ev);
+    const colorMap = {
+      "11":"var(--c-red-bd)","6":"var(--c-purple-bd)","10":"var(--c-green-bd)",
+      "3":"var(--c-blue-bd)","5":"var(--c-yellow-bd)","2":"var(--c-teal-bd)"
+    };
+    row.style.borderLeftColor = colorMap[colorId] || "var(--c-red-bd)";
+
+    const left = document.createElement("div");
+    left.style.minWidth="0";
+    left.innerHTML = `<div style="font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(chipLabel(ev))}</div>
+                      <div class="muted" style="font-size:12px;margin-top:2px;">${escapeHtml((ev.start?.dateTime)?fmtTime(ev):"ALL DAY")}</div>`;
+    const right = document.createElement("button");
+    right.className="secondary small";
+    right.textContent="Edit";
+    right.onclick = ()=>openModal("edit", ev);
+
+    row.appendChild(left); row.appendChild(right);
+    box.appendChild(row);
+  }
+}
+
+function renderMonth(items, range){
+  $("dowHeader").style.display="grid";
+  $("monthGrid").style.display="grid";
+  const mg = $("monthGrid");
+  mg.innerHTML = "";
+  $("monthLabel").textContent = range.first.toLocaleString(undefined, { month:"long", year:"numeric" });
+
+  const grouped = groupByDate(items);
+  const first = range.first;
+  const firstDow = first.getDay();
+  const gridStart = new Date(first); gridStart.setDate(first.getDate()-firstDow);
+  const today = isoDateLocal(new Date());
+
+  for(let i=0;i<42;i++){
+    const d = new Date(gridStart); d.setDate(gridStart.getDate()+i);
+    const dateStr = isoDateLocal(d);
+    const inMonth = d.getMonth()===first.getMonth();
+
+    const cell = document.createElement("div");
+    cell.className="dayCell";
+    cell.dataset.day = dateStr;
+    if(!inMonth) cell.style.opacity=".55";
+
+    const top = document.createElement("div");
+    top.className="dayTop";
+    const num = document.createElement("div");
+    num.className="dayNum"+(dateStr===today?" today":"");
+    num.textContent = String(d.getDate());
+    const meta = document.createElement("div");
+    meta.className="dayMeta";
+    meta.textContent = (d.getDate()===1)?(d.toLocaleString(undefined,{month:"short"})+" 1"):"";
+    top.appendChild(num); top.appendChild(meta);
+    cell.appendChild(top);
+
+    const dayEvents = grouped[dateStr] || [];
+    const MAX_SHOW = 3;
+
+    function addBar(ev){
+      const bar = document.createElement("div");
+      bar.className="eventBar";
+      bar.draggable = true;
+      bar.dataset.id = ev.id;
+      bar.dataset.color = getEventColorId(ev);
+
+      const t = (ev.start?.dateTime) ? fmtTime(ev) : "";
+      const label = t ? (t + " " + chipLabel(ev)) : chipLabel(ev);
+      bar.innerHTML = `<div class="eventText">${escapeHtml(label)}</div>`;
+
+      bar.addEventListener("dragstart", (e)=>{
+        e.dataTransfer.setData("text/plain", ev.id);
+        e.dataTransfer.effectAllowed = "copyMove";
+      });
+      bar.addEventListener("click", ()=>openModal("edit", ev));
+      cell.appendChild(bar);
+    }
+
+    dayEvents.slice(0,MAX_SHOW).forEach(addBar);
+    if(dayEvents.length > MAX_SHOW){
+      const more = document.createElement("div");
+      more.className="moreLink";
+      more.textContent = `+${dayEvents.length-MAX_SHOW} more`;
+      more.onclick = ()=>{ more.remove(); dayEvents.slice(MAX_SHOW).forEach(addBar); };
+      cell.appendChild(more);
+    }
+
+    cell.addEventListener("dragover", (e)=>{ e.preventDefault(); cell.classList.add("dropHint"); });
+    cell.addEventListener("dragleave", ()=>cell.classList.remove("dropHint"));
+    cell.addEventListener("drop", async (e)=>{
+      e.preventDefault();
+      cell.classList.remove("dropHint");
+      const id = e.dataTransfer.getData("text/plain");
+      const ev = lastEvents.find(x=>x.id===id);
+      if(!ev) return;
+
+      const isTouch = ("ontouchstart" in window) || (navigator.maxTouchPoints>0);
+      let act = (e.shiftKey && !isTouch) ? "C" : "M";
+      if(isTouch){
+        const a = prompt("Type M = Move, C = Copy (default M):", "M");
+        act = (a || "M").trim().toUpperCase();
+      }
+
+      try{
+        setStatus(act==="C" ? "Copying…" : "Moving…");
+        if(act==="C") await copyEventToDate(ev, dateStr);
+        else await moveEventToDate(ev, dateStr);
+        await load();
+        setStatus(act==="C" ? "Copied" : "Moved");
+      }catch(err){
+        dbg(err.message||err);
+      }
+    });
+
+    cell.addEventListener("click", ()=>{ $("datePick").value = dateStr; });
+    cell.addEventListener("dblclick", ()=>{ $("datePick").value = dateStr; openModal("new"); });
+
+    mg.appendChild(cell);
+  }
+}
+
+/* ===== Modal ===== */
+function openModal(mode, ev=null){
+  modalMode = mode;
+  editingEvent = ev;
+  $("modalBk").style.display="flex";
+
+  const dateStr = $("datePick").value || isoDateLocal(new Date());
+
+  buildForemanOptions();
+
+  if(mode==="new"){
+    $("modalTitle").textContent="New Job";
+    $("deleteBtn").style.display="none";
+    $("copyToBtn").style.display="none";
+    $("saveBtn").textContent="Save";
+
+    $("fDate").value = dateStr;
+    $("fTime").value = "";
+    $("fAddr").value = "";
+    $("fContact").value = "";
+    $("fLock").value = "";
+    $("fColor").value = "11";
+    $("fForeman").value = "";
+    setWorkersUI([]);
+    $("fRemove").value = "";
+    $("fKeep").value = "";
+    $("fProtect").value = "";
+    $("fDisposal").value = "";
+  }else{
+    $("modalTitle").textContent="Edit Job";
+    $("deleteBtn").style.display="inline-block";
+    $("copyToBtn").style.display="inline-block";
+    $("saveBtn").textContent="Update";
+
+    const startDay = ev.start.date || (ev.start.dateTime ? isoDateLocal(new Date(ev.start.dateTime)) : dateStr);
+    $("fDate").value = startDay;
+    $("fTime").value = ev.start.dateTime ? fmtTime(ev) : "";
+
+    const f = parseDescription(ev.description || "");
+    $("fAddr").value = f.addr || "";
+    $("fContact").value = f.contact || "";
+    $("fLock").value = f.lock || "";
+    $("fColor").value = (ev.colorId || f.colorId || "11");
+    $("fForeman").value = f.foreman || "";
+    setWorkersUI(f.workers || []);
+    $("fRemove").value = f.remove || "";
+    $("fKeep").value = f.keep || "";
+    $("fProtect").value = f.protect || "";
+    $("fDisposal").value = f.disposal || "";
+  }
+  refreshPreview();
+}
+
+function closeModal(){
+  $("modalBk").style.display="none";
+  editingEvent = null;
+}
+
+function collectFields(){
+  // handle custom foreman
+  let foreman = ($("fForeman").value||"").trim();
+  if(foreman === "__CUSTOM__"){
+    const v = prompt("Type foreman name:", "");
+    if(v !== null){
+      foreman = v.trim();
+      // keep custom selected label
+      $("fForeman").value = "__CUSTOM__";
+    }
+  }
+  return {
+    addr: ($("fAddr").value||"").trim(),
+    contact: ($("fContact").value||"").trim(),
+    lock: ($("fLock").value||"").trim(),
+    foreman,
+    workers: getWorkersFromUI(),
+    colorId: ($("fColor").value||"11").trim(),
+    remove: ($("fRemove").value||"").trim(),
+    keep: ($("fKeep").value||"").trim(),
+    protect: ($("fProtect").value||"").trim(),
+    disposal: ($("fDisposal").value||"").trim()
+  };
+}
+function refreshPreview(){
+  $("preview").value = buildDescription(collectFields());
+}
+
+function buildEventPayload(dateStr){
+  const fields = collectFields();
+  const desc = buildDescription(fields);
+  const addr = (fields.addr || "JOB").trim();
+
+  // Title shows ADDRESS ONLY
+  const summary = `${addr}`.trim();
+  const colorId = fields.colorId || "11";
+
+  const time = ($("fTime").value || "").trim();
+  if(time){
+    const [hh, mm] = time.split(":");
+    const start = new Date(dateStr+"T00:00:00");
+    start.setHours(Number(hh||0), Number(mm||0), 0, 0);
+    const end = new Date(start);
+    end.setMinutes(end.getMinutes() + DEFAULT_DURATION_MIN);
+
+    return {
+      summary,
+      description: desc,
+      colorId,
+      start: { dateTime: start.toISOString() },
+      end: { dateTime: end.toISOString() }
+    };
+  }
+
+  const endDay = new Date(dateStr+"T00:00:00");
+  endDay.setDate(endDay.getDate()+1);
+
+  return {
+    summary,
+    description: desc,
+    colorId,
+    start: { date: dateStr },
+    end: { date: isoDateLocal(endDay) }
+  };
+}
+
+async function createEventOnDate(dateStr){
+  const payload = buildEventPayload(dateStr);
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(ACTIVE_CALENDAR_ID)}/events`;
+  await apiFetch(url, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
+}
+
+async function updateEvent(evId, dateStr){
+  const payload = buildEventPayload(dateStr);
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(ACTIVE_CALENDAR_ID)}/events/${encodeURIComponent(evId)}`;
+  await apiFetch(url, { method:"PATCH", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
+}
+
+async function deleteEvent(evId){
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(ACTIVE_CALENDAR_ID)}/events/${encodeURIComponent(evId)}`;
+  await apiFetch(url, { method:"DELETE" });
+}
+
+function shiftEvent(ev, targetDate){
+  const copy = JSON.parse(JSON.stringify(ev));
+  if(ev.start?.date){
+    copy.start = { date: targetDate };
+    const d = new Date(targetDate+"T00:00:00"); d.setDate(d.getDate()+1);
+    copy.end = { date: isoDateLocal(d) };
+  }else if(ev.start?.dateTime){
+    const s = new Date(ev.start.dateTime);
+    const e = new Date(ev.end.dateTime);
+    const ns = new Date(targetDate+"T00:00:00"); ns.setHours(s.getHours(), s.getMinutes(), 0, 0);
+    const ne = new Date(targetDate+"T00:00:00"); ne.setHours(e.getHours(), e.getMinutes(), 0, 0);
+    if(ne <= ns){
+      const dur = Math.max(15, (e - s)/60000);
+      ne.setTime(ns.getTime() + dur*60000);
+    }
+    copy.start = { dateTime: ns.toISOString() };
+    copy.end = { dateTime: ne.toISOString() };
+  }
+  return copy;
+}
+
+async function moveEventToDate(ev, targetDate){
+  const shifted = shiftEvent(ev, targetDate);
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(ACTIVE_CALENDAR_ID)}/events/${encodeURIComponent(ev.id)}`;
+  await apiFetch(url, { method:"PATCH", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ start: shifted.start, end: shifted.end }) });
+}
+
+async function copyEventToDate(ev, targetDate){
+  const payload = shiftEvent(ev, targetDate);
+  delete payload.id;
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(ACTIVE_CALENDAR_ID)}/events`;
+  await apiFetch(url, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
+}
+
+/* ===== WhatsApp ===== */
+function buildWhatsAppTextForDate(dateStr, events){
+  const lines = [`KG DEMOLISH DAILY SCHEDULE: ${dateStr}`, ""];
+  if(!events.length){
+    lines.push("(no job)");
+    return lines.join("\n");
+  }
+  const sorted = sortDayEvents(events);
+  for(const ev of sorted){
+    const f = parseDescription(ev.description || "");
+    const addr = f.addr || "__________";
+    const contact = f.contact || "__________";
+    const lock = f.lock || "__________";
+    const remove = f.remove || "__________";
+    lines.push(`Address: ${addr}`);
+    lines.push(`Remove: ${remove} | Contact: ${contact} | Lock No: ${lock}`);
+    lines.push("--------------------------------");
+  }
+  return lines.join("\n");
+}
+
+async function copyWhatsApp(){
+  const dateStr = $("datePick").value || isoDateLocal(new Date());
+  const events = lastEvents.filter(ev=>{
+    const day = ev.start.date || (ev.start.dateTime ? isoDateLocal(new Date(ev.start.dateTime)) : "");
+    return day === dateStr;
+  });
+  const txt = buildWhatsAppTextForDate(dateStr, events);
+  await navigator.clipboard.writeText(txt);
+  setStatus("Copied to clipboard");
+}
+
+function openWhatsAppPopout(){
+  const dateStr = $("datePick").value || isoDateLocal(new Date());
+  const events = lastEvents.filter(ev=>{
+    const day = ev.start.date || (ev.start.dateTime ? isoDateLocal(new Date(ev.start.dateTime)) : "");
+    return day === dateStr;
+  });
+  const txt = buildWhatsAppTextForDate(dateStr, events);
+  const url = "https://wa.me/?text=" + encodeURIComponent(txt);
+  const w = window.open(url, "_blank", "noopener,noreferrer");
+  if(!w) location.href = url;
+}
+
+/* ===== Navigation ===== */
+function goToday(){
+  $("datePick").value = isoDateLocal(new Date());
+  load();
+}
+function shiftDays(delta){
+  const d = new Date(($("datePick").value || isoDateLocal(new Date()))+"T00:00:00");
+  d.setDate(d.getDate()+delta);
+  $("datePick").value = isoDateLocal(d);
+  load();
+}
+
+/* ===== Wire UI ===== */
+function wire(){
+  $("datePick").value = isoDateLocal(new Date());
+  buildForemanOptions();
+  setWorkersUI([]);
+
+  $("authBtn").addEventListener("click", authorize);
+  $("logoutBtn").addEventListener("click", logout);
+
+  $("todayBtn").addEventListener("click", goToday);
+  $("prevBtn").addEventListener("click", ()=>shiftDays($("viewSel").value==="month" ? -30 : -1));
+  $("nextBtn").addEventListener("click", ()=>shiftDays($("viewSel").value==="month" ? 30 : 1));
+
+  $("loadBtn").addEventListener("click", load);
+  $("resetBtn").addEventListener("click", resetAppCache);
+  $("newBtn").addEventListener("click", ()=>openModal("new"));
+
+  $("copyWaBtn").addEventListener("click", copyWhatsApp);
+  $("openWaBtn").addEventListener("click", openWhatsAppPopout);
+
+  $("viewSel").addEventListener("change", load);
+  $("datePick").addEventListener("change", load);
+
+  $("closeModalBtn").addEventListener("click", closeModal);
+  $("modalBk").addEventListener("click", (e)=>{ if(e.target.id==="modalBk") closeModal(); });
+
+  for(const id of ["fDate","fTime","fAddr","fContact","fLock","fForeman","fColor","fRemove","fKeep","fProtect","fDisposal"]){
+    $(id).addEventListener("input", refreshPreview);
+    $(id).addEventListener("change", refreshPreview);
+  }
+
+  $("addWorkerBtn").addEventListener("click", ()=>{
+    $("workersList").appendChild(workerRowEl("", 0));
+    refreshPreview();
+  });
+  $("clearWorkersBtn").addEventListener("click", ()=>{
+    setWorkersUI([]);
+    refreshPreview();
+  });
+
+  $("clearBtn").addEventListener("click", ()=>{
+    $("fTime").value = "";
+    $("fAddr").value = "";
+    $("fContact").value = "";
+    $("fLock").value = "";
+    $("fColor").value = "11";
+    $("fForeman").value = "";
+    setWorkersUI([]);
+    $("fRemove").value = "";
+    $("fKeep").value = "";
+    $("fProtect").value = "";
+    $("fDisposal").value = "";
+    refreshPreview();
+  });
+
+  $("saveBtn").addEventListener("click", async ()=>{
+    try{
+      if(!accessToken) return alert("Please Authorize first.");
+      const dateStr = $("fDate").value || $("datePick").value || isoDateLocal(new Date());
+      if(modalMode==="new"){
+        setStatus("Saving…");
+        await createEventOnDate(dateStr);
+        setStatus("Saved");
+      }else{
+        setStatus("Updating…");
+        await updateEvent(editingEvent.id, dateStr);
+        setStatus("Updated");
+      }
+      closeModal();
+      await load();
+    }catch(e){
+      dbg(e.message||e);
+      alert(e.message || String(e));
+    }
+  });
+
+  $("deleteBtn").addEventListener("click", async ()=>{
+    if(!editingEvent) return;
+    if(!confirm("Delete this job?")) return;
+    try{
+      setStatus("Deleting…");
+      await deleteEvent(editingEvent.id);
+      setStatus("Deleted");
+      closeModal();
+      await load();
+    }catch(e){
+      dbg(e.message||e);
+      alert(e.message || String(e));
+    }
+  });
+
+  $("copyToBtn").addEventListener("click", async ()=>{
+    if(!editingEvent) return;
+    const target = prompt("Copy this job to date (YYYY-MM-DD):", $("datePick").value);
+    if(!target) return;
+    try{
+      setStatus("Copying…");
+      await copyEventToDate(editingEvent, target.trim());
+      setStatus("Copied");
+      await load();
+    }catch(e){
+      dbg(e.message||e);
+      alert(e.message || String(e));
+    }
+  });
+
+  refreshPreview();
+
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  }
+}
+
+window.addEventListener("load", ()=>{ wire(); });
+</script>
+</body>
+</html>
