@@ -105,7 +105,7 @@
           <div class="s">Edit jobs + send WhatsApp daily schedule</div>
         </div>
       </div>
-      <div class="muted" style="font-size:12px;font-weight:900;">CLEAN v5.4</div>
+      <div class="muted" style="font-size:12px;font-weight:900;">CLEAN v5.5</div>
     </div>
   </div>
 
@@ -218,12 +218,14 @@
           <label>Foremen / 头手 (multiple)</label>
           <select id="fForemen" multiple style="min-height:120px"></select>
           <div class="hintSmall">Desktop: Ctrl/Command for multi-select. Phone: tap to select/unselect.</div>
+          <div class="hintSmall" id="foremenHint"></div>
         </div>
 
         <div class="full">
           <label>Workers (multiple)</label>
           <select id="fWorkers" multiple style="min-height:160px"></select>
           <div class="hintSmall">No numbers. Edit lists in <span class="mono">config.js</span></div>
+          <div class="hintSmall" id="workersHint"></div>
         </div>
 
         <div class="full">
@@ -341,6 +343,107 @@ function setMultiSelectValues(sel, values){
   const set = new Set((values||[]).map(v=>String(v)));
   for(const opt of Array.from(sel.options)) opt.selected = set.has(opt.value);
 }
+// ===== Assignments (show address beside people if already assigned on selected day) =====
+const _assignCache = {}; // dateStr -> { foremen: Map(name->addresses[]), workers: Map(name->addresses[]) }
+function _eventDay(ev){
+  return ev.start?.date || (ev.start?.dateTime ? isoDateLocal(new Date(ev.start.dateTime)) : "");
+}
+function _uniqPush(map, name, addr){
+  if(!name || !addr) return;
+  const k = String(name).trim();
+  if(!k) return;
+  const a = String(addr).trim();
+  const arr = map.get(k) || [];
+  if(!arr.includes(a)) arr.push(a);
+  map.set(k, arr);
+}
+function computeAssignmentsForDate(dateStr, events, excludeEventId){
+  const foremen = new Map();
+  const workers = new Map();
+  for(const ev of (events||[])){
+    if(excludeEventId && ev.id === excludeEventId) continue;
+    if(_eventDay(ev) !== dateStr) continue;
+    const f = parseDescription(ev.description || "");
+    const addr = (f.addr || ev.summary || "").trim();
+    for(const n of (f.foremen||[])) _uniqPush(foremen, n, addr);
+    for(const n of (f.workers||[])) _uniqPush(workers, n, addr);
+  }
+  return { foremen, workers };
+}
+
+async function fetchEventsForDateOnly(dateStr){
+  const start = new Date(dateStr+"T00:00:00");
+  const end = new Date(start); end.setDate(end.getDate()+1);
+  const timeMin = start.toISOString();
+  const timeMax = end.toISOString();
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(ACTIVE_CALENDAR_ID)}/events?singleEvents=true&orderBy=startTime&maxResults=2500&timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`;
+  const data = await apiFetch(url);
+  return (data.items||[]).filter(eventMatchesFilter);
+}
+
+async function getAssignments(dateStr, excludeEventId){
+  if(!dateStr) return { foremen:new Map(), workers:new Map() };
+
+  const haveDateInLast = (lastEvents||[]).some(ev => _eventDay(ev) === dateStr);
+  if(haveDateInLast){
+    return computeAssignmentsForDate(dateStr, lastEvents, excludeEventId);
+  }
+
+  if(_assignCache[dateStr]) return _assignCache[dateStr];
+
+  const items = await fetchEventsForDateOnly(dateStr);
+  const res = computeAssignmentsForDate(dateStr, items, excludeEventId);
+  _assignCache[dateStr] = res;
+  return res;
+}
+
+function applyAssignmentLabels(selectEl, map){
+  for(const opt of Array.from(selectEl.options)){
+    const name = opt.value;
+    const addrs = map.get(name) || [];
+    if(addrs.length){
+      const show = addrs.length <= 2 ? addrs.join("; ") : (addrs.slice(0,2).join("; ") + ` (+${addrs.length-2})`);
+      opt.textContent = `${name} — ${show}`;
+    }else{
+      opt.textContent = name;
+    }
+  }
+}
+
+function showHintLine(hintEl, map, selectEl){
+  if(!hintEl) return;
+  const picked = Array.from(selectEl.selectedOptions).map(o=>o.value);
+  const parts = [];
+  for(const p of picked){
+    const addrs = map.get(p) || [];
+    if(addrs.length) parts.push(`${p}: ${addrs.join("; ")}`);
+  }
+  hintEl.textContent = parts.length ? ("Assigned today → " + parts.join(" | ")) : "";
+}
+
+async function refreshAssignmentHints(){
+  const dateStr = $("fDate")?.value || $("datePick")?.value || isoDateLocal(new Date());
+  if(!dateStr) return;
+
+  const excludeId = (modalMode==="edit" && editingEvent) ? editingEvent.id : null;
+
+  const foreHint = $("foremenHint");
+  const workHint = $("workersHint");
+  if(foreHint) foreHint.textContent = "Checking assignments…";
+  if(workHint) workHint.textContent = "Checking assignments…";
+
+  try{
+    const { foremen, workers } = await getAssignments(dateStr, excludeId);
+    applyAssignmentLabels($("fForemen"), foremen);
+    applyAssignmentLabels($("fWorkers"), workers);
+    showHintLine(foreHint, foremen, $("fForemen"));
+    showHintLine(workHint, workers, $("fWorkers"));
+  }catch(e){
+    if(foreHint) foreHint.textContent = "";
+    if(workHint) workHint.textContent = "";
+  }
+}
+
 
 function parseDescription(desc){
   const out = { addr:"", contact:"", lock:"", foremen:[], workers:[], remove:"", keep:"", protect:"", disposal:"", colorId:"" };
@@ -638,6 +741,7 @@ async function load(){
     const view = $("viewSel").value;
     const { items, range } = await fetchEvents();
     lastEvents = items;
+    for(const k in _assignCache){ delete _assignCache[k]; }
 
     if(view==="month"){
       renderMonth(items, range);
@@ -857,6 +961,7 @@ function openModal(mode, ev=null){
     $("fDisposal").value = f.disposal || "";
   }
   refreshPreview();
+  refreshAssignmentHints();
 }
 
 function closeModal(){
@@ -1057,6 +1162,11 @@ function wire(){
     $(id).addEventListener("change", refreshPreview);
   }
 
+
+  // Refresh assignment labels when date or people selection changes
+  $("fDate").addEventListener("change", refreshAssignmentHints);
+  $("fForemen").addEventListener("change", refreshAssignmentHints);
+  $("fWorkers").addEventListener("change", refreshAssignmentHints);
   $("clearBtn").addEventListener("click", ()=>{
     $("fTime").value = "";
     $("fAddr").value = "";
