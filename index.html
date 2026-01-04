@@ -68,23 +68,54 @@
     .moreLink{margin-top:6px;font-size:12px;font-weight:900;color:var(--blue);cursor:pointer;user-select:none}
     .dropHint{outline:2px dashed rgba(26,115,232,.45);outline-offset:-6px}
 
-    .modalBackdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;padding:14px;z-index:100}
-    .modal{width:min(780px,100%);background:#fff;border-radius:18px;border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden}
+    .modalBackdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;padding:14px;z-index:100
+
+align-items: center;
+
+}
+    .modal{width:min(780px,100%);background:#fff;border-radius:18px;border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden
+
+display:flex;
+flex-direction:column;
+max-height: calc(100dvh - 28px);
+
+}
     .modalHead{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);background:#fff}
     .modalHead .h{font-weight:900}
-    .modalBody{padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .modalBody{padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px
+
+overflow:auto;
+-webkit-overflow-scrolling: touch;
+padding-bottom: calc(14px + env(safe-area-inset-bottom));
+
+}
     .modalBody .full{grid-column:1/-1}
     .modalBody label{display:block;font-size:12px;color:var(--muted);margin:6px 0 6px;font-weight:900}
     .modalBody input,.modalBody textarea,.modalBody select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);outline:none;background:#fff}
     textarea{min-height:92px;resize:vertical}
-    .modalFoot{padding:12px 14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fff}
+    .modalFoot{padding:12px 14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fff
+
+position: sticky;
+bottom: 0;
+z-index: 2;
+background: #fff;
+padding-bottom: calc(12px + env(safe-area-inset-bottom));
+
+}
     .danger{background:#ef4444;border-color:#ef4444}
     .muted{color:var(--muted)}
     .hintSmall{font-size:12px;color:var(--muted);margin-top:6px}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
 
     @media (max-width:520px){
-      .wrap{padding:10px}
+      .wrap{padding:10px
+      .modal{width:100%; max-height: calc(100dvh - 12px); border-radius:16px;}
+
+      .modalBackdrop{padding:10px; align-items:stretch;}
+
+      .modalBody{padding-bottom: calc(18px + env(safe-area-inset-bottom));}
+
+    }
       .topInner{padding:12px 10px}
       .controls{grid-template-columns:1fr 1fr;gap:8px}
       .dayCell{min-height:92px;padding:8px 6px 6px}
@@ -105,7 +136,7 @@
           <div class="s">Edit jobs + send WhatsApp daily schedule</div>
         </div>
       </div>
-      <div class="muted" style="font-size:12px;font-weight:900;">CLEAN v5.5</div>
+      <div class="muted" style="font-size:12px;font-weight:900;">CLEAN v5.6</div>
     </div>
   </div>
 
