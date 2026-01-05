@@ -175,7 +175,7 @@ padding-bottom: calc(12px + env(safe-area-inset-bottom));
           <div class="s">Edit jobs + send WhatsApp daily schedule</div>
         </div>
       </div>
-      <div class="muted" style="font-size:12px;font-weight:900;">CLEAN v5.7</div>
+      <div class="muted" style="font-size:12px;font-weight:900;">CLEAN v5.8</div>
     </div>
   </div>
 
@@ -1132,6 +1132,21 @@ function shiftEvent(ev, targetDate){
   return copy;
 }
 
+// IMPORTANT: when copying, DO NOT send identifiers (id / iCalUID / recurring ids / etag).
+// Those can cause API 409 duplicate errors.
+function sanitizeCopyPayload(ev, targetDate){
+  const shifted = shiftEvent(ev, targetDate);
+  return {
+    summary: ((ev.summary || "").trim() || chipLabel(ev)),
+    description: ev.description || "",
+    location: ev.location || "",
+    colorId: (ev.colorId || getEventColorId(ev) || "11"),
+    start: shifted.start,
+    end: shifted.end
+  };
+}
+
+
 async function moveEventToDate(ev, targetDate){
   const shifted = shiftEvent(ev, targetDate);
   const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(ACTIVE_CALENDAR_ID)}/events/${encodeURIComponent(ev.id)}`;
@@ -1139,11 +1154,11 @@ async function moveEventToDate(ev, targetDate){
 }
 
 async function copyEventToDate(ev, targetDate){
-  const payload = shiftEvent(ev, targetDate);
-  delete payload.id;
+  const payload = sanitizeCopyPayload(ev, targetDate);
   const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(ACTIVE_CALENDAR_ID)}/events`;
   await apiFetch(url, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
 }
+
 
 /* ===== WhatsApp ===== */
 function buildWhatsAppTextForDate(dateStr, events){
