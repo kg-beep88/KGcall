@@ -175,7 +175,7 @@ padding-bottom: calc(12px + env(safe-area-inset-bottom));
           <div class="s">Edit jobs + send WhatsApp daily schedule</div>
         </div>
       </div>
-      <div class="muted" style="font-size:12px;font-weight:900;">CLEAN v5.8</div>
+      <div class="muted" style="font-size:12px;font-weight:900;">CLEAN v5.9</div>
     </div>
   </div>
 
@@ -402,6 +402,7 @@ function fillMultiSelect(sel, items){
   for(const name of items){
     const opt = document.createElement("option");
     opt.value = String(name);
+    opt.dataset.baseText = String(name); // keep original label
     opt.textContent = String(name);
     sel.appendChild(opt);
   }
