@@ -283,21 +283,6 @@ padding-bottom: calc(12px + env(safe-area-inset-bottom));
           </select>
         </div>
         <div class="hintSmall" style="align-self:end">Drag job to another date: Move. Hold SHIFT to Copy (desktop). Phone will ask Move/Copy.</div>
-
-        <div class="full">
-          <label>Foremen / 头手 (multiple)</label>
-          <select id="fForemen" multiple style="min-height:120px"></select>
-          <div class="hintSmall">Desktop: Ctrl/Command for multi-select. Phone: tap to select/unselect.</div>
-          <div class="hintSmall" id="foremenHint"></div>
-        </div>
-
-        <div class="full">
-          <label>Workers (multiple)</label>
-          <select id="fWorkers" multiple style="min-height:160px"></select>
-          <div class="hintSmall">No numbers. Edit lists in <span class="mono">config.js</span></div>
-          <div class="hintSmall" id="workersHint"></div>
-        </div>
-
         <div class="full">
           <label>Remove</label>
           <input id="fRemove" placeholder="Remove :"/>
@@ -341,8 +326,6 @@ const CLIENT_ID = CFG.CLIENT_ID || "";
 const DEFAULT_FILTER = CFG.DEFAULT_FILTER || "#KG";
 const DEFAULT_DURATION_MIN = Number(CFG.DEFAULT_DURATION_MIN || 120);
 const DEFAULT_CALENDAR_ID = CFG.CALENDAR_ID || "primary";
-const FOREMEN_LIST = Array.isArray(CFG.FOREMEN) ? CFG.FOREMEN : [];
-const WORKERS_LIST = Array.isArray(CFG.WORKERS) ? CFG.WORKERS : [];
 let ACTIVE_CALENDAR_ID = localStorage.getItem("kg_active_calendar") || DEFAULT_CALENDAR_ID;
 
 const SCOPES = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly openid email";
@@ -397,178 +380,35 @@ function sortDayEvents(list){
   return (list||[]).slice().sort((a,b)=>eventSortKey(a)-eventSortKey(b));
 }
 
-function fillMultiSelect(sel, items){
-  sel.innerHTML = "";
-  for(const name of items){
-    const opt = document.createElement("option");
-    opt.value = String(name);
-    opt.dataset.baseText = String(name); // keep original label
-    opt.textContent = String(name);
-    sel.appendChild(opt);
-  }
-}
-function getMultiSelectValues(sel){
-  return Array.from(sel.selectedOptions).map(o=>o.value).filter(Boolean);
-}
-function setMultiSelectValues(sel, values){
-  const set = new Set((values||[]).map(v=>String(v)));
-  for(const opt of Array.from(sel.options)) opt.selected = set.has(opt.value);
-}
-// ===== Assignments (show address beside people if already assigned on selected day) =====
-const _assignCache = {}; // dateStr -> { foremen: Map(name->addresses[]), workers: Map(name->addresses[]) }
-function _eventDay(ev){
-  return ev.start?.date || (ev.start?.dateTime ? isoDateLocal(new Date(ev.start.dateTime)) : "");
-}
-function _uniqPush(map, name, addr){
-  if(!name || !addr) return;
-  const k = String(name).trim();
-  if(!k) return;
-  const a = String(addr).trim();
-  const arr = map.get(k) || [];
-  if(!arr.includes(a)) arr.push(a);
-  map.set(k, arr);
-}
-function computeAssignmentsForDate(dateStr, events, excludeEventId){
-  const foremen = new Map();
-  const workers = new Map();
-  for(const ev of (events||[])){
-    if(excludeEventId && ev.id === excludeEventId) continue;
-    if(_eventDay(ev) !== dateStr) continue;
-    const f = parseDescription(ev.description || "");
-    const addr = (f.addr || ev.summary || "").trim();
-    for(const n of (f.foremen||[])) _uniqPush(foremen, n, addr);
-    for(const n of (f.workers||[])) _uniqPush(workers, n, addr);
-  }
-  return { foremen, workers };
-}
-
-async function fetchEventsForDateOnly(dateStr){
-  const start = new Date(dateStr+"T00:00:00");
-  const end = new Date(start); end.setDate(end.getDate()+1);
-  const timeMin = start.toISOString();
-  const timeMax = end.toISOString();
-  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(ACTIVE_CALENDAR_ID)}/events?singleEvents=true&orderBy=startTime&maxResults=2500&timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`;
-  const data = await apiFetch(url);
-  return (data.items||[]).filter(eventMatchesFilter);
-}
-
-async function getAssignments(dateStr, excludeEventId){
-  if(!dateStr) return { foremen:new Map(), workers:new Map() };
-
-  const haveDateInLast = (lastEvents||[]).some(ev => _eventDay(ev) === dateStr);
-  if(haveDateInLast){
-    return computeAssignmentsForDate(dateStr, lastEvents, excludeEventId);
-  }
-
-  if(_assignCache[dateStr]) return _assignCache[dateStr];
-
-  const items = await fetchEventsForDateOnly(dateStr);
-  const res = computeAssignmentsForDate(dateStr, items, excludeEventId);
-  _assignCache[dateStr] = res;
-  return res;
-}
-
-function applyAssignmentLabels(selectEl, map){
-  for(const opt of Array.from(selectEl.options)){
-    const name = opt.value;
-    const addrs = map.get(name) || [];
-    if(addrs.length){
-      const show = addrs.length <= 2 ? addrs.join("; ") : (addrs.slice(0,2).join("; ") + ` (+${addrs.length-2})`);
-      opt.textContent = `${name} — ${show}`;
-    }else{
-      opt.textContent = name;
-    }
-  }
-}
-
-function showHintLine(hintEl, map, selectEl){
-  if(!hintEl) return;
-  const picked = Array.from(selectEl.selectedOptions).map(o=>o.value);
-  const parts = [];
-  for(const p of picked){
-    const addrs = map.get(p) || [];
-    if(addrs.length) parts.push(`${p}: ${addrs.join("; ")}`);
-  }
-  hintEl.textContent = parts.length ? ("Assigned today → " + parts.join(" | ")) : "";
-}
-
-async function refreshAssignmentHints(){
-  const dateStr = $("fDate")?.value || $("datePick")?.value || isoDateLocal(new Date());
-  if(!dateStr) return;
-
-  const excludeId = (modalMode==="edit" && editingEvent) ? editingEvent.id : null;
-
-  const foreHint = $("foremenHint");
-  const workHint = $("workersHint");
-  if(foreHint) foreHint.textContent = "Checking assignments…";
-  if(workHint) workHint.textContent = "Checking assignments…";
-
-  try{
-    const { foremen, workers } = await getAssignments(dateStr, excludeId);
-    applyAssignmentLabels($("fForemen"), foremen);
-    applyAssignmentLabels($("fWorkers"), workers);
-    showHintLine(foreHint, foremen, $("fForemen"));
-    showHintLine(workHint, workers, $("fWorkers"));
-  }catch(e){
-    if(foreHint) foreHint.textContent = "";
-    if(workHint) workHint.textContent = "";
-  }
-}
-
 
 function parseDescription(desc){
-  const out = { addr:"", contact:"", lock:"", foremen:[], workers:[], remove:"", keep:"", protect:"", disposal:"", colorId:"" };
+  const out = { addr:"", contact:"", lock:"", remove:"", keep:"", protect:"", disposal:"", colorId:"" };
   const lines = (desc || "").split(/\r?\n/);
-  let inWorkers = false;
   for(const raw of lines){
     const line = (raw || "").trim();
     if(!line) continue;
     const lower = line.toLowerCase();
 
-    if(lower.startsWith("address:")) { out.addr = line.slice(8).trim(); inWorkers=false; }
-    else if(lower.startsWith("contact:")) { out.contact = line.slice(8).trim(); inWorkers=false; }
+    if(lower.startsWith("address:")) { out.addr = line.slice(8).trim(); }
+    else if(lower.startsWith("contact:")) { out.contact = line.slice(8).trim(); }
     else if(lower.startsWith("lock no:") || lower.startsWith("lockno:") || lower.startsWith("lock:")){
-      out.lock = line.split(":").slice(1).join(":").trim(); inWorkers=false;
+      out.lock = line.split(":").slice(1).join(":").trim();
     }
-    else if(lower.startsWith("foremen:") || lower.startsWith("foreman:")){
-      const v = line.split(":").slice(1).join(":").trim();
-      out.foremen = v ? v.split(",").map(s=>s.trim()).filter(Boolean) : [];
-      inWorkers=false;
-    }
-    else if(lower.startsWith("workers:")){
-      const v = line.split(":").slice(1).join(":").trim();
-      if(v){
-        out.workers = v.split(",").map(s=>s.trim()).filter(Boolean);
-        inWorkers = false;
-      }else{
-        inWorkers = true;
-      }
-    }
-    else if(inWorkers && (line.startsWith("-") || lower.startsWith("worker"))){
-      let t = line.replace(/^[-•]\s*/, "");
-      t = t.replace(/^worker\s*:\s*/i, "");
-      const name = t.trim();
-      if(name) out.workers.push(name);
-    }
-    else if(lower.startsWith("remove")) { out.remove = line.split(":").slice(1).join(":").trim(); inWorkers=false; }
-    else if(lower.startsWith("keep")) { out.keep = line.split(":").slice(1).join(":").trim(); inWorkers=false; }
-    else if(lower.startsWith("protect")) { out.protect = line.split(":").slice(1).join(":").trim(); inWorkers=false; }
-    else if(lower.startsWith("disposal")) { out.disposal = line.split(":").slice(1).join(":").trim(); inWorkers=false; }
-    else if(lower.startsWith("color:")) { out.colorId = line.split(":").slice(1).join(":").trim(); inWorkers=false; }
+    else if(lower.startsWith("remove")) { out.remove = line.split(":").slice(1).join(":").trim(); }
+    else if(lower.startsWith("keep")) { out.keep = line.split(":").slice(1).join(":").trim(); }
+    else if(lower.startsWith("protect")) { out.protect = line.split(":").slice(1).join(":").trim(); }
+    else if(lower.startsWith("disposal")) { out.disposal = line.split(":").slice(1).join(":").trim(); }
+    else if(lower.startsWith("color:")) { out.colorId = line.split(":").slice(1).join(":").trim(); }
   }
   return out;
 }
 
 function buildDescription(fields){
-  const foremen = (fields.foremen||[]).map(x=>String(x).trim()).filter(Boolean);
-  const workers = (fields.workers||[]).map(x=>String(x).trim()).filter(Boolean);
 
   return [
     `Address: ${fields.addr || "__________"}`,
     `Contact: ${fields.contact || "__________"}`,
     `Lock No: ${fields.lock || "__________"}`,
-    `Foremen: ${foremen.length ? foremen.join(", ") : "__________"}`,
-    `Workers: ${workers.length ? workers.join(", ") : "__________"}`,
     `SCOPE :`,
     `Remove : ${fields.remove || "__________"}`,
     `Keep : ${fields.keep || "__________"}`,
@@ -988,8 +828,6 @@ function openModal(mode, ev=null){
   $("modalBk").style.display="flex";
 
   const dateStr = $("datePick").value || isoDateLocal(new Date());
-  fillMultiSelect($("fForemen"), FOREMEN_LIST);
-  fillMultiSelect($("fWorkers"), WORKERS_LIST);
 
   if(mode==="new"){
     $("modalTitle").textContent="New Job";
@@ -1003,8 +841,6 @@ function openModal(mode, ev=null){
     $("fContact").value = "";
     $("fLock").value = "";
     $("fColor").value = "11";
-    setMultiSelectValues($("fForemen"), []);
-    setMultiSelectValues($("fWorkers"), []);
     $("fRemove").value = "";
     $("fKeep").value = "";
     $("fProtect").value = "";
@@ -1024,15 +860,12 @@ function openModal(mode, ev=null){
     $("fContact").value = f.contact || "";
     $("fLock").value = f.lock || "";
     $("fColor").value = (ev.colorId || f.colorId || "11");
-    setMultiSelectValues($("fForemen"), f.foremen || []);
-    setMultiSelectValues($("fWorkers"), f.workers || []);
     $("fRemove").value = f.remove || "";
     $("fKeep").value = f.keep || "";
     $("fProtect").value = f.protect || "";
     $("fDisposal").value = f.disposal || "";
   }
   refreshPreview();
-  refreshAssignmentHints();
 }
 
 function closeModal(){
@@ -1045,8 +878,6 @@ function collectFields(){
     addr: ($("fAddr").value||"").trim(),
     contact: ($("fContact").value||"").trim(),
     lock: ($("fLock").value||"").trim(),
-    foremen: getMultiSelectValues($("fForemen")),
-    workers: getMultiSelectValues($("fWorkers")),
     colorId: ($("fColor").value||"11").trim(),
     remove: ($("fRemove").value||"").trim(),
     keep: ($("fKeep").value||"").trim(),
@@ -1220,8 +1051,6 @@ function shiftDays(delta){
 /* ===== Wire UI ===== */
 function wire(){
   $("datePick").value = isoDateLocal(new Date());
-  fillMultiSelect($("fForemen"), FOREMEN_LIST);
-  fillMultiSelect($("fWorkers"), WORKERS_LIST);
 
   $("authBtn").addEventListener("click", authorize);
   $("logoutBtn").addEventListener("click", logout);
@@ -1243,24 +1072,16 @@ function wire(){
   $("closeModalBtn").addEventListener("click", closeModal);
   $("modalBk").addEventListener("click", (e)=>{ if(e.target.id==="modalBk") closeModal(); });
 
-  for(const id of ["fDate","fTime","fAddr","fContact","fLock","fForemen","fWorkers","fColor","fRemove","fKeep","fProtect","fDisposal"]){
+  for(const id of ["fDate","fTime","fAddr","fContact","fLock","fColor","fRemove","fKeep","fProtect","fDisposal"]){
     $(id).addEventListener("input", refreshPreview);
     $(id).addEventListener("change", refreshPreview);
   }
-
-
-  // Refresh assignment labels when date or people selection changes
-  $("fDate").addEventListener("change", refreshAssignmentHints);
-  $("fForemen").addEventListener("change", refreshAssignmentHints);
-  $("fWorkers").addEventListener("change", refreshAssignmentHints);
   $("clearBtn").addEventListener("click", ()=>{
     $("fTime").value = "";
     $("fAddr").value = "";
     $("fContact").value = "";
     $("fLock").value = "";
     $("fColor").value = "11";
-    setMultiSelectValues($("fForemen"), []);
-    setMultiSelectValues($("fWorkers"), []);
     $("fRemove").value = "";
     $("fKeep").value = "";
     $("fProtect").value = "";
