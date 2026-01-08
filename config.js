@@ -13,7 +13,7 @@ window.APP_CONFIG = {
    "阿仔", "阿Yap", "阿Mun", "阿Fook", "阿Cheong", "老国", "益发", "小黑", "小春", "小勇", "小光",
     "Lulu", "Eddie", "阿轩", "阿添", "阿忠", "小盛", "小富", "小伟", "Faizul"
     ],
-  WORKERS: ["Zaman", "Yappan", "Vishnu", "Uddin", "Suresh", "Sukunar", "Silampu", "Sijan",
+  WORKERS: ["Zaman", "Yappan", "Vishnu", "Uddin", "Suresh", "Sukumar", "Silampu", "Sijan",
    "Shan", "Shahidul", "Sekar", "Sayful", "Sathiya", "Sajib", "Roni", "Robiul", "Rashid",
     "Rana", "Ram", "Rahman", "Panjang", "Neela", "Nagen", "Murugesan", "Molla", "Mohidul",
      "Md Rabiul", "Maya", "Maru", "Mani", "Mamun", "Kumar", "Konar", "Kawsar", "Kuruppu",
